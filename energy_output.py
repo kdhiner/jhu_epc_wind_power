@@ -12,11 +12,11 @@ We will plot the power curve over the course of the time periods under considera
 
 import numpy as np
 import pandas as pd
-from scipy.stats import weibull_min
+from scipy.stats import weibull_min, kstest
 
 import matplotlib.pyplot as plt
 
-LOCATION = "Chicago, IL"  # Change this to "Washington, D.C." or "Chicago, IL" as needed
+LOCATION = "Washington, D.C."  # Change this to "Washington, D.C." or "Chicago, IL" as needed
 print(f"\nCalculating energy output for {LOCATION}")
 
 if LOCATION == "Washington, D.C.":
@@ -78,6 +78,18 @@ def plot_wind_speed_histogram(weather_data: pd.DataFrame, outpath: str = 'wind_s
     # Calculate the Weibull distribution parameters for the wind speed data
     shape, loc, scale = weibull_min.fit(wind_data, floc=0)  # Fix location to 0 for wind speed data
     print(f"Weibull parameters for {height}: shape={shape}, loc={loc}, scale={scale}")
+
+    # Conduct a Kolmogorov-Smirnov test to assess goodness-of-fit to the fitted Weibull
+    # Null hypothesis: data comes from the fitted Weibull distribution
+    cdf_func = lambda x: weibull_min.cdf(x, shape, loc, scale)
+    ks_stat, ks_pvalue = kstest(wind_data, cdf_func)
+    print(f"KS test for {height}: statistic={ks_stat:.4f}, p-value={ks_pvalue:.4f}")
+    alpha = 0.05
+    if ks_pvalue < alpha:
+        print(f"Reject null hypothesis at alpha={alpha}: Weibull is NOT a good fit for {height}.")
+    else:
+        print(f"Fail to reject null hypothesis at alpha={alpha}: Weibull is a plausible fit for {height}.")
+
     x = np.linspace(0, wind_data.max(), 100)
     pdf = weibull_min.pdf(x, shape, loc, scale)
 
@@ -106,6 +118,12 @@ def plot_wind_speed_histogram(weather_data: pd.DataFrame, outpath: str = 'wind_s
 if __name__ == "__main__":
     weather_data = pd.read_csv(WEATHER_FILE)
     weather_data['time'] = pd.to_datetime(weather_data['time'])
+
+    # Display the distribution of wind speeds at both 10m and 100m
+    print(f"\nWind speed distribution at 10m for {LOCATION} 2025:")
+    print(weather_data['wind_speed_10m'].describe())
+    print(f"\nWind speed distribution at 100m for {LOCATION} 2025:")
+    print(weather_data['wind_speed_100m'].describe())
 
     # I need a binning for the power curve so that any wind speed can be converted to a power unit
     # I am going to build this manually by examining the documentation for the UGE-4K wind turbine. The power curve is as follows:
@@ -136,7 +154,7 @@ if __name__ == "__main__":
     total_energy_100m = weather_data['power_output_100m'].sum() * 1  # Assuming each row represents 1 hour output units are kWh
 
     # Print the total energy output
-    print(f"Total energy output at 10m: {total_energy_10m} kWh")
+    print(f"\nTotal energy output at 10m: {total_energy_10m} kWh")
     print(f"Total energy output at 100m: {total_energy_100m} kWh")   
 
 
