@@ -59,36 +59,46 @@ def plot_power_output(weather_data: pd.DataFrame, outpath: str = 'power_output_o
     plt.tight_layout()
     plt.savefig(outpath)
 
-def plot_wind_speed_histogram(weather_data: pd.DataFrame, outpath: str = 'wind_speed_histogram_2025.png', height: str = '10m', bins: int = 20) -> None:
-    """Plot the histogram distribution of wind speeds and save to file.
+def fit_weibull_distribution(weather_data: pd.DataFrame, height: str = '10m') -> tuple:
+    """Fit a Weibull distribution to wind speed data and perform a KS test.
 
-    Args:
-        weather_data (pd.DataFrame): DataFrame containing wind speed data.
-        outpath (str): File path to save the figure.
-        height (str): Height of the wind speed measurement to plot ('10m' or '100m').
-        bins (int): Number of histogram bins.
+    Returns: (shape, loc, scale, ks_stat, ks_pvalue)
     """
     if height not in ('10m', '100m'):
         raise ValueError("height must be '10m' or '100m'")
 
     column = f'wind_speed_{height}'
+    wind_data = weather_data[column].dropna()
 
-    wind_data = weather_data[column].dropna() 
-
-    # Calculate the Weibull distribution parameters for the wind speed data
-    shape, loc, scale = weibull_min.fit(wind_data, floc=0)  # Fix location to 0 for wind speed data
-    print(f"Weibull parameters for {height}: shape={shape}, loc={loc}, scale={scale}")
-
-    # Conduct a Kolmogorov-Smirnov test to assess goodness-of-fit to the fitted Weibull
-    # Null hypothesis: data comes from the fitted Weibull distribution
+    shape, loc, scale = weibull_min.fit(wind_data, floc=0)
     cdf_func = lambda x: weibull_min.cdf(x, shape, loc, scale)
     ks_stat, ks_pvalue = kstest(wind_data, cdf_func)
+
+    print(f"Weibull parameters for {height}: shape={round(shape, 2)}, loc={loc}, scale={round(scale, 2)}")
     print(f"KS test for {height}: statistic={ks_stat:.4f}, p-value={ks_pvalue:.4f}")
     alpha = 0.05
     if ks_pvalue < alpha:
-        print(f"Reject null hypothesis at alpha={alpha}: Weibull is NOT a good fit for {height}.")
+        print(f"Reject null hypothesis that the distributions are identical at alpha={alpha}: Weibull is NOT a good fit for {height}.")
     else:
-        print(f"Fail to reject null hypothesis at alpha={alpha}: Weibull is a plausible fit for {height}.")
+        print(f"Fail to reject null hypothesis that the distributions are identical at alpha={alpha}: Weibull is a plausible fit for {height}.")
+
+    return shape, loc, scale, ks_stat, ks_pvalue
+
+
+def plot_wind_speed_histogram(weather_data: pd.DataFrame, outpath: str = 'wind_speed_histogram_2025.png', height: str = '10m', bins: int = 20) -> None:
+    """Plot the histogram distribution of wind speeds with the fitted Weibull and save to file.
+
+    This function calls fit_weibull_distribution to obtain parameters to plot the fit.
+    """
+    if height not in ('10m', '100m'):
+        raise ValueError("height must be '10m' or '100m'")
+
+    print(f"\nPlotting wind speed histogram for {height} at {LOCATION} 2025")
+
+    column = f'wind_speed_{height}'
+    wind_data = weather_data[column].dropna()
+
+    shape, loc, scale, ks_stat, ks_pvalue = fit_weibull_distribution(weather_data, height=height)
 
     x = np.linspace(0, wind_data.max(), 100)
     pdf = weibull_min.pdf(x, shape, loc, scale)
@@ -106,7 +116,6 @@ def plot_wind_speed_histogram(weather_data: pd.DataFrame, outpath: str = 'wind_s
     plt.text(0.95, 0.95, f'Weibull\nShape: {shape:.2f}\nScale: {scale:.2f}', transform=plt.gca().transAxes, fontsize=10, verticalalignment='top', horizontalalignment='right', bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
 
     plt.legend()
-
     plt.title(f'Wind Speed Distribution at {height} {LOCATION} 2025')
     plt.xlabel('Wind Speed (m/s)')
     plt.ylabel('Probability Density')
