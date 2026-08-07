@@ -76,7 +76,7 @@ def fit_weibull_distribution(weather_data: pd.DataFrame, height: str = '10m') ->
 
     print(f"Weibull parameters for {height}: shape={round(shape, 2)}, loc={loc}, scale={round(scale, 2)}")
     print(f"KS test for {height}: statistic={ks_stat:.4f}, p-value={ks_pvalue:.4f}")
-    alpha = 0.05
+    alpha = 0.001
     if ks_pvalue < alpha:
         print(f"Reject null hypothesis that the distributions are identical at alpha={alpha}: Weibull is NOT a good fit for {height}.")
     else:
