@@ -16,13 +16,15 @@ from scipy.stats import weibull_min, kstest
 
 import matplotlib.pyplot as plt
 
-LOCATION = "Washington, D.C."  # Change this to "Washington, D.C." or "Chicago, IL" as needed
+LOCATION = "Seattle, WA"  # Change this to "Washington, D.C." or "Chicago, IL" as needed
 print(f"\nCalculating energy output for {LOCATION}")
 
 if LOCATION == "Washington, D.C.":
     WEATHER_FILE = 'open-meteo-38.91N77.07W12m_2025_edit.csv' #Wasington, D.C. weather data for 2025
 elif LOCATION == "Chicago, IL":
     WEATHER_FILE = 'open-meteo-41.86N87.65W179m_2025_edit.csv' #Chicago, IL weather data for 2025
+elif LOCATION == "Seattle, WA":
+    WEATHER_FILE = 'open-meteo-47.61N122.33W52m_2025_edit.csv' #Seattle, WA weather data for 2025
 
 def speed_to_power_rating(speed: float, lookup: dict = None) -> float:
     """Translate a wind speed to a power rating using the bin dictionary.
@@ -147,7 +149,8 @@ if __name__ == "__main__":
         (9, 10): 2,
         (10, 11): 2.75,
         (11, 12): 3.5,
-        (12, 30): 4
+        (12, 30): 4,
+        (30, float('inf')): 0  # Above cut-out speed, power output is 0
     }
 
     # Plot the wind speed histogram for both 10m and 100m
