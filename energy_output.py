@@ -24,7 +24,9 @@ if LOCATION == "Washington, D.C.":
 elif LOCATION == "Chicago, IL":
     WEATHER_FILE = 'open-meteo-41.86N87.65W179m_2025_edit.csv' #Chicago, IL weather data for 2025
 elif LOCATION == "Seattle, WA":
-    WEATHER_FILE = 'open-meteo-47.61N122.33W52m_2025_edit.csv' #Seattle, WA weather data for 2025
+    WEATHER_FILE = 'open-meteo-47.63N122.32W59m_2025_edit.csv' #Seattle, WA weather data for 2025
+elif LOCATION == "Minneapolis, MN":
+    WEATHER_FILE = 'open-meteo-44.96N93.21W261m_2025_edit.csv' #Minneapolis, MN weather data for 2025
 
 def speed_to_power_rating(speed: float, lookup: dict = None) -> float:
     """Translate a wind speed to a power rating using the bin dictionary.
